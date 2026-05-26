@@ -4,6 +4,7 @@ import axiosInstance from '@/api/axiosInstance'
 import DashboardLayout from '@/components/common/DashboardLayout'
 import PageHeader from '@/components/ui/PageHeader'
 import StatCard from '@/components/ui/StatCard'
+import AnimatedStatGrid from '@/components/ui/AnimatedStatGrid'
 import LoadingPage from '@/components/ui/LoadingPage'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 
@@ -30,7 +31,7 @@ function JobseekerDashboard() {
         <LoadingPage message="Loading dashboard…" />
       ) : (
         <>
-          <div className="stat-grid">
+          <AnimatedStatGrid>
             <StatCard
               label="Total applications"
               value={data?.applications?.total ?? 0}
@@ -46,7 +47,7 @@ function JobseekerDashboard() {
               value={data?.active_jobs ?? 0}
               icon={Briefcase}
             />
-          </div>
+          </AnimatedStatGrid>
 
           <Card>
             <CardHeader>

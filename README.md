@@ -61,6 +61,14 @@ Or start both with:
 ## Repository
 
 - GitHub: [jobbridgepeso-beep/PESOPILALAGUNA](https://github.com/jobbridgepeso-beep/PESOPILALAGUNA)
+- **Paano i-push sa GitHub:** tingnan ang [docs/PUSH_SA_GITHUB.md](docs/PUSH_SA_GITHUB.md) (Tagalog step-by-step)
+
+## Verify Supabase
+
+```bash
+cd backend
+python scripts/verify_supabase.py
+```
 
 ## Specs
 

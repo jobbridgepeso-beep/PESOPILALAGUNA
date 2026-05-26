@@ -1,4 +1,5 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { AnimatePresence } from 'framer-motion'
 import ProtectedRoute from '@/components/auth/ProtectedRoute'
 import RoleGuard from '@/components/auth/RoleGuard'
 
@@ -15,9 +16,12 @@ import EmployerDashboard from '@/pages/employer/Dashboard'
 import StaffDashboard from '@/pages/staff/Dashboard'
 import AdminDashboard from '@/pages/admin/Dashboard'
 
-function App() {
+function AppRoutes() {
+  const location = useLocation()
+
   return (
-    <Routes>
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
       {/* Public routes */}
       <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="/login" element={<LoginPage />} />
@@ -88,8 +92,13 @@ function App() {
 
       {/* Catch-all */}
       <Route path="*" element={<Navigate to="/login" replace />} />
-    </Routes>
+      </Routes>
+    </AnimatePresence>
   )
+}
+
+function App() {
+  return <AppRoutes />
 }
 
 export default App

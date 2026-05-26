@@ -4,6 +4,7 @@ import axiosInstance from '@/api/axiosInstance'
 import DashboardLayout from '@/components/common/DashboardLayout'
 import PageHeader from '@/components/ui/PageHeader'
 import StatCard from '@/components/ui/StatCard'
+import AnimatedStatGrid from '@/components/ui/AnimatedStatGrid'
 import LoadingPage from '@/components/ui/LoadingPage'
 
 function StaffDashboard() {
@@ -28,7 +29,7 @@ function StaffDashboard() {
       {isLoading ? (
         <LoadingPage message="Loading dashboard…" />
       ) : (
-        <div className="stat-grid">
+        <AnimatedStatGrid>
           <StatCard
             label="Registered jobseekers"
             value={data?.total_jobseekers ?? 0}
@@ -54,7 +55,7 @@ function StaffDashboard() {
             value={data?.pending_programs ?? 0}
             icon={FileText}
           />
-        </div>
+        </AnimatedStatGrid>
       )}
     </DashboardLayout>
   )

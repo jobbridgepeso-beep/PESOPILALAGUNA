@@ -1,4 +1,6 @@
+import { motion } from 'framer-motion'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
+import PageMotion from './PageMotion'
 import { LayoutDashboard, LogOut, User } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import { logout } from '@/api/authApi'
@@ -118,7 +120,7 @@ export default function DashboardLayout({ children, title, description }) {
                   <p className="mt-1 text-sm text-muted-foreground">{description}</p>
                 )}
               </div>
-              {children}
+              <PageMotion key={location.pathname}>{children}</PageMotion>
             </div>
           </main>
 
