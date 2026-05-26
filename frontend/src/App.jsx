@@ -12,8 +12,14 @@ import ResetPasswordPage from '@/pages/auth/ResetPasswordPage'
 
 // Role dashboards (stubs — implemented in tasks 20–23)
 import JobseekerDashboard from '@/pages/jobseeker/Dashboard'
+import JobseekerProfile from '@/pages/jobseeker/Profile'
+import JobSearch from '@/pages/jobseeker/JobSearch'
+import MyApplications from '@/pages/jobseeker/MyApplications'
 import EmployerDashboard from '@/pages/employer/Dashboard'
+import EmployerProfile from '@/pages/employer/Profile'
+import EmployerVacancies from '@/pages/employer/Vacancies'
 import StaffDashboard from '@/pages/staff/Dashboard'
+import VacancyApprovals from '@/pages/staff/VacancyApprovals'
 import AdminDashboard from '@/pages/admin/Dashboard'
 
 function AppRoutes() {
@@ -39,6 +45,9 @@ function AppRoutes() {
               <Routes>
                 <Route index element={<Navigate to="dashboard" replace />} />
                 <Route path="dashboard" element={<JobseekerDashboard />} />
+                <Route path="profile" element={<JobseekerProfile />} />
+                <Route path="jobs" element={<JobSearch />} />
+                <Route path="applications" element={<MyApplications />} />
               </Routes>
             </RoleGuard>
           </ProtectedRoute>
@@ -54,6 +63,8 @@ function AppRoutes() {
               <Routes>
                 <Route index element={<Navigate to="dashboard" replace />} />
                 <Route path="dashboard" element={<EmployerDashboard />} />
+                <Route path="profile" element={<EmployerProfile />} />
+                <Route path="vacancies" element={<EmployerVacancies />} />
               </Routes>
             </RoleGuard>
           </ProtectedRoute>
@@ -69,6 +80,7 @@ function AppRoutes() {
               <Routes>
                 <Route index element={<Navigate to="dashboard" replace />} />
                 <Route path="dashboard" element={<StaffDashboard />} />
+                <Route path="approvals" element={<VacancyApprovals />} />
               </Routes>
             </RoleGuard>
           </ProtectedRoute>

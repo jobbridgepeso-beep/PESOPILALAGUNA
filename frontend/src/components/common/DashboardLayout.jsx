@@ -1,7 +1,8 @@
 import { motion } from 'framer-motion'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import PageMotion from './PageMotion'
-import { LayoutDashboard, LogOut, User } from 'lucide-react'
+import { LogOut, User } from 'lucide-react'
+import { ROLE_NAV } from '@/config/navigation'
 import { useAuthStore } from '@/store/authStore'
 import { logout } from '@/api/authApi'
 import toast from 'react-hot-toast'
@@ -17,18 +18,11 @@ const ROLE_LABELS = {
   admin: 'Administrator',
 }
 
-const NAV = {
-  jobseeker: [{ to: '/jobseeker/dashboard', label: 'Dashboard', icon: LayoutDashboard }],
-  employer: [{ to: '/employer/dashboard', label: 'Dashboard', icon: LayoutDashboard }],
-  staff: [{ to: '/staff/dashboard', label: 'Dashboard', icon: LayoutDashboard }],
-  admin: [{ to: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard }],
-}
-
 export default function DashboardLayout({ children, title, description }) {
   const navigate = useNavigate()
   const location = useLocation()
   const { user, role, clearAuth } = useAuthStore()
-  const links = NAV[role] || []
+  const links = ROLE_NAV[role] || []
 
   const handleLogout = async () => {
     try {

@@ -121,30 +121,29 @@ def send_otp_email(to_email: str, otp: str, purpose: str) -> None:
 
 
 def send_inapp(user_id: str, event_type: str, payload: dict[str, Any]) -> None:
-    """Insert a notification record and emit a Socket.io event to the user's room.
+    """Insert a notification record and emit a Socket.io event to the user's room."""
+    title = payload.get("title", "JobBridge notification")
+    body = payload.get("body", "")
 
-    TODO (Task 8.1): Implement fully once Flask-SocketIO rooms are wired up.
-      Steps to implement:
-        1. Insert a row into the ``notifications`` table via supabase-py with
-           fields: user_id, event_type, title, body, payload, is_read=False.
-        2. Import ``socketio`` from ``app.extensions`` and call:
-               socketio.emit(event_type, payload, room=f"user_{user_id}")
-           so the connected client receives the event in real time.
+    try:
+        supabase = get_supabase()
+        supabase.table("notifications").insert(
+            {
+                "user_id": user_id,
+                "event_type": event_type,
+                "title": title,
+                "body": body,
+                "payload": payload,
+                "is_read": False,
+            }
+        ).execute()
+    except Exception as exc:
+        logger.error("Failed to insert notification: %s", exc, exc_info=True)
 
-    Args:
-        user_id:    UUID string of the target user.
-        event_type: Socket.io event name (e.g. ``'notification'``,
-                    ``'application_update'``).
-        payload:    Arbitrary dict of event data to deliver to the client.
-    """
-    # TODO (Task 8.1): Insert notification record into ``notifications`` table.
-    # TODO (Task 8.1): Emit Socket.io event to room f"user_{user_id}".
-    logger.debug(
-        "[send_inapp stub] user_id=%s event_type=%s payload=%s",
-        user_id,
-        event_type,
-        payload,
-    )
+    try:
+        socketio.emit(event_type, payload, room=f"user_{user_id}")
+    except Exception as exc:
+        logger.debug("Socket.io emit skipped: %s", exc)
 
 
 def notify(
