@@ -2,6 +2,9 @@ import { useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import AuthLayout from '@/components/common/AuthLayout'
+import Button from '@/components/ui/Button'
+import Input from '@/components/ui/Input'
+import Label from '@/components/ui/Label'
 import { resetPassword } from '@/api/authApi'
 
 function ResetPasswordPage() {
@@ -35,52 +38,59 @@ function ResetPasswordPage() {
   }
 
   return (
-    <AuthLayout title="Reset password" subtitle="Enter the code from your email">
-      <form onSubmit={handleSubmit} className="space-y-4">
+    <AuthLayout
+      title="Reset password"
+      subtitle="Enter the code from your email and choose a new password."
+      footer={
+        <Link to="/login" className="font-semibold text-primary hover:underline">
+          Back to sign in
+        </Link>
+      }
+    >
+      <form onSubmit={handleSubmit} className="form-stack">
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Email</label>
-          <input
+          <Label htmlFor="email" required>
+            Email address
+          </Label>
+          <Input
+            id="email"
             type="email"
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
           />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">OTP code</label>
-          <input
-            type="text"
+          <Label htmlFor="otp" required>
+            Reset code
+          </Label>
+          <Input
+            id="otp"
             maxLength={6}
             required
             value={otp}
             onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+            placeholder="000000"
+            className="text-center tracking-[0.3em]"
           />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">New password</label>
-          <input
+          <Label htmlFor="password" required>
+            New password
+          </Label>
+          <Input
+            id="password"
             type="password"
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+            placeholder="Minimum 8 characters"
           />
         </div>
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full rounded-md bg-blue-600 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
-        >
-          {loading ? 'Updating…' : 'Reset password'}
-        </button>
+        <Button type="submit" className="w-full" size="lg" disabled={loading}>
+          {loading ? 'Updating…' : 'Update password'}
+        </Button>
       </form>
-      <p className="mt-4 text-center text-sm">
-        <Link to="/login" className="text-blue-600 hover:underline">
-          Back to login
-        </Link>
-      </p>
     </AuthLayout>
   )
 }

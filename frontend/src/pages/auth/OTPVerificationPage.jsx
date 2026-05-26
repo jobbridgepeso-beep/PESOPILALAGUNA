@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import AuthLayout from '@/components/common/AuthLayout'
+import Button from '@/components/ui/Button'
+import Input from '@/components/ui/Input'
+import Label from '@/components/ui/Label'
 import { verifyOtp, resendOtp } from '@/api/authApi'
 
 function OTPVerificationPage() {
@@ -27,7 +30,7 @@ function OTPVerificationPage() {
         toast.error(res.message || 'Verification failed')
         return
       }
-      toast.success('Email verified! You can now sign in.')
+      toast.success('Email verified. You may now sign in.')
       navigate('/login')
     } catch (err) {
       toast.error(err.response?.data?.message || 'Verification failed')
@@ -40,7 +43,7 @@ function OTPVerificationPage() {
     if (countdown > 0) return
     try {
       await resendOtp(email.trim().toLowerCase(), 'registration')
-      toast.success('New code sent')
+      toast.success('A new code has been sent')
       setCountdown(60)
     } catch (err) {
       toast.error(err.response?.data?.message || 'Could not resend code')
@@ -48,51 +51,56 @@ function OTPVerificationPage() {
   }
 
   return (
-    <AuthLayout title="Verify email" subtitle="Enter the 6-digit code we sent you">
-      <form onSubmit={handleVerify} className="space-y-4">
+    <AuthLayout
+      title="Verify your email"
+      subtitle="Enter the 6-digit verification code sent to your email address. Codes expire in 10 minutes."
+      footer={
+        <Link to="/login" className="font-semibold text-primary hover:underline">
+          Back to sign in
+        </Link>
+      }
+    >
+      <form onSubmit={handleVerify} className="form-stack">
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Email</label>
-          <input
+          <Label htmlFor="email" required>
+            Email address
+          </Label>
+          <Input
+            id="email"
             type="email"
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
           />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">OTP code</label>
-          <input
-            type="text"
+          <Label htmlFor="otp" required>
+            Verification code
+          </Label>
+          <Input
+            id="otp"
             inputMode="numeric"
             maxLength={6}
             required
             value={otp}
             onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-center text-lg tracking-widest"
+            placeholder="000000"
+            className="text-center text-xl tracking-[0.4em] font-semibold"
           />
         </div>
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full rounded-md bg-blue-600 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
+        <Button type="submit" className="w-full" size="lg" disabled={loading}>
+          {loading ? 'Verifying…' : 'Verify email'}
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          className="w-full"
+          disabled={countdown > 0}
+          onClick={handleResend}
         >
-          {loading ? 'Verifying…' : 'Verify'}
-        </button>
+          {countdown > 0 ? `Resend code in ${countdown}s` : 'Resend verification code'}
+        </Button>
       </form>
-      <button
-        type="button"
-        onClick={handleResend}
-        disabled={countdown > 0}
-        className="mt-3 w-full text-sm text-blue-600 hover:underline disabled:text-slate-400"
-      >
-        {countdown > 0 ? `Resend in ${countdown}s` : 'Resend code'}
-      </button>
-      <p className="mt-4 text-center text-sm">
-        <Link to="/login" className="text-slate-600 hover:underline">
-          Back to login
-        </Link>
-      </p>
     </AuthLayout>
   )
 }

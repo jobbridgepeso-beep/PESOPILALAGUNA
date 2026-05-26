@@ -1,15 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
+import { Briefcase, ClipboardList, Calendar } from 'lucide-react'
 import axiosInstance from '@/api/axiosInstance'
 import DashboardLayout from '@/components/common/DashboardLayout'
-
-function StatCard({ label, value }) {
-  return (
-    <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-      <p className="text-sm text-slate-500">{label}</p>
-      <p className="mt-1 text-3xl font-bold text-slate-800">{value}</p>
-    </div>
-  )
-}
+import PageHeader from '@/components/ui/PageHeader'
+import StatCard from '@/components/ui/StatCard'
+import LoadingPage from '@/components/ui/LoadingPage'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 
 function JobseekerDashboard() {
   const { data, isLoading } = useQuery({
@@ -21,15 +17,49 @@ function JobseekerDashboard() {
   })
 
   return (
-    <DashboardLayout title="Jobseeker Dashboard">
+    <DashboardLayout
+      title="Jobseeker Dashboard"
+      description="Overview of your applications and job opportunities"
+    >
+      <PageHeader
+        title="Overview"
+        description="Track your job applications, interviews, and available positions in Pila, Laguna."
+      />
+
       {isLoading ? (
-        <p className="text-slate-500">Loading…</p>
+        <LoadingPage message="Loading dashboard…" />
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <StatCard label="My applications" value={data?.applications?.total ?? 0} />
-          <StatCard label="Pending" value={data?.applications?.pending ?? 0} />
-          <StatCard label="Active job openings" value={data?.active_jobs ?? 0} />
-        </div>
+        <>
+          <div className="stat-grid">
+            <StatCard
+              label="Total applications"
+              value={data?.applications?.total ?? 0}
+              icon={ClipboardList}
+            />
+            <StatCard
+              label="Pending review"
+              value={data?.applications?.pending ?? 0}
+              icon={Calendar}
+            />
+            <StatCard
+              label="Active job openings"
+              value={data?.active_jobs ?? 0}
+              icon={Briefcase}
+            />
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Quick information</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                Visit the job search module to browse vacancies matched to your profile.
+                For assistance, contact PESO Pila staff during office hours.
+              </p>
+            </CardContent>
+          </Card>
+        </>
       )}
     </DashboardLayout>
   )

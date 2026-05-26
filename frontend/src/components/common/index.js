@@ -1,9 +1,3 @@
-/**
- * Shared layout components are added here as they are implemented.
- *
- * Planned exports (task 19.1):
- *   - Sidebar
- *   - Navbar
- *   - NotificationBell
- *   - DashboardLayout
- */
+export { default as AuthLayout } from './AuthLayout'
+export { default as DashboardLayout } from './DashboardLayout'
+export { default as GovBrand } from './GovBrand'

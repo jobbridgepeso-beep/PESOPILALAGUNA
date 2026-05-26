@@ -1,15 +1,10 @@
 import { useQuery } from '@tanstack/react-query'
+import { Users, Briefcase, ClipboardCheck, CalendarDays, FileText } from 'lucide-react'
 import axiosInstance from '@/api/axiosInstance'
 import DashboardLayout from '@/components/common/DashboardLayout'
-
-function StatCard({ label, value }) {
-  return (
-    <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-      <p className="text-sm text-slate-500">{label}</p>
-      <p className="mt-1 text-3xl font-bold text-slate-800">{value}</p>
-    </div>
-  )
-}
+import PageHeader from '@/components/ui/PageHeader'
+import StatCard from '@/components/ui/StatCard'
+import LoadingPage from '@/components/ui/LoadingPage'
 
 function StaffDashboard() {
   const { data, isLoading } = useQuery({
@@ -21,16 +16,44 @@ function StaffDashboard() {
   })
 
   return (
-    <DashboardLayout title="PESO Staff Dashboard">
+    <DashboardLayout
+      title="PESO Staff Dashboard"
+      description="Municipal employment services operations"
+    >
+      <PageHeader
+        title="Operations overview"
+        description="Monitor jobseeker registrations, vacancy approvals, job fairs, and government programs."
+      />
+
       {isLoading ? (
-        <p className="text-slate-500">Loading…</p>
+        <LoadingPage message="Loading dashboard…" />
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <StatCard label="Registered jobseekers" value={data?.total_jobseekers ?? 0} />
-          <StatCard label="Active vacancies" value={data?.active_vacancies ?? 0} />
-          <StatCard label="Pending approvals" value={data?.pending_approvals ?? 0} />
-          <StatCard label="Upcoming job fairs" value={data?.upcoming_job_fairs ?? 0} />
-          <StatCard label="Pending programs" value={data?.pending_programs ?? 0} />
+        <div className="stat-grid">
+          <StatCard
+            label="Registered jobseekers"
+            value={data?.total_jobseekers ?? 0}
+            icon={Users}
+          />
+          <StatCard
+            label="Active vacancies"
+            value={data?.active_vacancies ?? 0}
+            icon={Briefcase}
+          />
+          <StatCard
+            label="Pending approvals"
+            value={data?.pending_approvals ?? 0}
+            icon={ClipboardCheck}
+          />
+          <StatCard
+            label="Upcoming job fairs"
+            value={data?.upcoming_job_fairs ?? 0}
+            icon={CalendarDays}
+          />
+          <StatCard
+            label="Pending program applications"
+            value={data?.pending_programs ?? 0}
+            icon={FileText}
+          />
         </div>
       )}
     </DashboardLayout>

@@ -2,6 +2,9 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import AuthLayout from '@/components/common/AuthLayout'
+import Button from '@/components/ui/Button'
+import Input from '@/components/ui/Input'
+import Label from '@/components/ui/Label'
 import { forgotPassword } from '@/api/authApi'
 
 function ForgotPasswordPage() {
@@ -24,31 +27,33 @@ function ForgotPasswordPage() {
   }
 
   return (
-    <AuthLayout title="Forgot password" subtitle="We will email you a reset code">
-      <form onSubmit={handleSubmit} className="space-y-4">
+    <AuthLayout
+      title="Forgot password"
+      subtitle="We will send a one-time reset code to your registered email address."
+      footer={
+        <Link to="/login" className="font-semibold text-primary hover:underline">
+          Back to sign in
+        </Link>
+      }
+    >
+      <form onSubmit={handleSubmit} className="form-stack">
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Email</label>
-          <input
+          <Label htmlFor="email" required>
+            Email address
+          </Label>
+          <Input
+            id="email"
             type="email"
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+            placeholder="you@example.com"
           />
         </div>
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full rounded-md bg-blue-600 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
-        >
+        <Button type="submit" className="w-full" size="lg" disabled={loading}>
           {loading ? 'Sending…' : 'Send reset code'}
-        </button>
+        </Button>
       </form>
-      <p className="mt-4 text-center text-sm">
-        <Link to="/login" className="text-blue-600 hover:underline">
-          Back to login
-        </Link>
-      </p>
     </AuthLayout>
   )
 }

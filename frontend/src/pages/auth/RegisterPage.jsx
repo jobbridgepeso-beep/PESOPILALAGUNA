@@ -2,6 +2,10 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import AuthLayout from '@/components/common/AuthLayout'
+import Button from '@/components/ui/Button'
+import Input from '@/components/ui/Input'
+import Label from '@/components/ui/Label'
+import Select from '@/components/ui/Select'
 import { register } from '@/api/authApi'
 
 function RegisterPage() {
@@ -35,7 +39,7 @@ function RegisterPage() {
         toast.error(res.message || 'Registration failed')
         return
       }
-      toast.success('Check your email for the verification code')
+      toast.success('Verification code sent to your email')
       navigate('/verify-otp', { state: { email: form.email.trim().toLowerCase() } })
     } catch (err) {
       toast.error(err.response?.data?.message || 'Registration failed')
@@ -45,65 +49,75 @@ function RegisterPage() {
   }
 
   return (
-    <AuthLayout title="Create account" subtitle="Jobseeker or Employer registration">
-      <form onSubmit={handleSubmit} className="space-y-4">
+    <AuthLayout
+      title="Create account"
+      subtitle="Register as a jobseeker or employer. Email verification is required."
+      footer={
+        <p>
+          Already registered?{' '}
+          <Link to="/login" className="font-semibold text-primary hover:underline">
+            Sign in
+          </Link>
+        </p>
+      }
+    >
+      <form onSubmit={handleSubmit} className="form-stack">
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">I am a</label>
-          <select
+          <Label htmlFor="role" required>
+            Account type
+          </Label>
+          <Select
+            id="role"
             value={form.role}
             onChange={(e) => setForm({ ...form, role: e.target.value })}
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
           >
             <option value="jobseeker">Jobseeker</option>
             <option value="employer">Employer</option>
-          </select>
+          </Select>
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Email</label>
-          <input
+          <Label htmlFor="email" required>
+            Email address
+          </Label>
+          <Input
+            id="email"
             type="email"
             required
             value={form.email}
             onChange={(e) => setForm({ ...form, email: e.target.value })}
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+            placeholder="you@example.com"
           />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Password</label>
-          <input
+          <Label htmlFor="password" required>
+            Password
+          </Label>
+          <Input
+            id="password"
             type="password"
             required
             value={form.password}
             onChange={(e) => setForm({ ...form, password: e.target.value })}
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+            placeholder="Minimum 8 characters"
           />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">
+          <Label htmlFor="confirm" required>
             Confirm password
-          </label>
-          <input
+          </Label>
+          <Input
+            id="confirm"
             type="password"
             required
             value={form.confirm}
             onChange={(e) => setForm({ ...form, confirm: e.target.value })}
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+            placeholder="Re-enter password"
           />
         </div>
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full rounded-md bg-blue-600 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
-        >
-          {loading ? 'Creating…' : 'Register'}
-        </button>
+        <Button type="submit" className="w-full" size="lg" disabled={loading}>
+          {loading ? 'Creating account…' : 'Register'}
+        </Button>
       </form>
-      <p className="mt-4 text-center text-sm text-slate-600">
-        Already have an account?{' '}
-        <Link to="/login" className="text-blue-600 hover:underline">
-          Sign in
-        </Link>
-      </p>
     </AuthLayout>
   )
 }

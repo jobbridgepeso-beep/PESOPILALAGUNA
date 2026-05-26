@@ -1,15 +1,10 @@
 import { useQuery } from '@tanstack/react-query'
+import { Briefcase, Users, UserCheck, Clock } from 'lucide-react'
 import axiosInstance from '@/api/axiosInstance'
 import DashboardLayout from '@/components/common/DashboardLayout'
-
-function StatCard({ label, value }) {
-  return (
-    <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-      <p className="text-sm text-slate-500">{label}</p>
-      <p className="mt-1 text-3xl font-bold text-slate-800">{value}</p>
-    </div>
-  )
-}
+import PageHeader from '@/components/ui/PageHeader'
+import StatCard from '@/components/ui/StatCard'
+import LoadingPage from '@/components/ui/LoadingPage'
 
 function EmployerDashboard() {
   const { data, isLoading } = useQuery({
@@ -21,15 +16,35 @@ function EmployerDashboard() {
   })
 
   return (
-    <DashboardLayout title="Employer Dashboard">
+    <DashboardLayout
+      title="Employer Dashboard"
+      description="Manage vacancies and review applicants"
+    >
+      <PageHeader
+        title="Hiring overview"
+        description="Monitor your job postings, applicant pipeline, and hiring progress."
+      />
+
       {isLoading ? (
-        <p className="text-slate-500">Loading…</p>
+        <LoadingPage message="Loading dashboard…" />
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <StatCard label="Active vacancies" value={data?.active_vacancies ?? 0} />
-          <StatCard label="Total applicants" value={data?.total_applicants ?? 0} />
-          <StatCard label="Pending reviews" value={data?.pending_reviews ?? 0} />
-          <StatCard label="Hired" value={data?.hired ?? 0} />
+        <div className="stat-grid">
+          <StatCard
+            label="Active vacancies"
+            value={data?.active_vacancies ?? 0}
+            icon={Briefcase}
+          />
+          <StatCard
+            label="Total applicants"
+            value={data?.total_applicants ?? 0}
+            icon={Users}
+          />
+          <StatCard
+            label="Pending reviews"
+            value={data?.pending_reviews ?? 0}
+            icon={Clock}
+          />
+          <StatCard label="Hired" value={data?.hired ?? 0} icon={UserCheck} />
         </div>
       )}
     </DashboardLayout>
