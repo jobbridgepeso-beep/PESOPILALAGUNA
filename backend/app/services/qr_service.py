@@ -34,24 +34,15 @@ def _build_token(participant_id: str, event_id: str, timestamp: int) -> str:
     return f"{participant_id}:{event_id}:{timestamp}:{signature}"
 
 
-def generate_qr(participant_id: str, event_id: str) -> bytes:
-    """Generate a QR code PNG for a job fair registration.
-
-    Creates an HMAC-signed token encoding the participant and event IDs,
-    then renders it as a PNG image.
-
-    Args:
-        participant_id: UUID string of the registered jobseeker.
-        event_id:       UUID string of the job fair event.
-
-    Returns:
-        PNG image bytes.
-
-    Requirements: 10.1
-    """
+def generate_qr_with_token(participant_id: str, event_id: str) -> tuple[str, bytes]:
+    """Return signed token string and PNG bytes for a registration."""
     timestamp = int(time.time())
     token = _build_token(participant_id, event_id, timestamp)
+    png = _render_qr_png(token)
+    return token, png
 
+
+def _render_qr_png(token: str) -> bytes:
     qr = qrcode.QRCode(
         version=1,
         error_correction=qrcode.constants.ERROR_CORRECT_H,
@@ -60,11 +51,16 @@ def generate_qr(participant_id: str, event_id: str) -> bytes:
     )
     qr.add_data(token)
     qr.make(fit=True)
-
     img = qr.make_image(fill_color="black", back_color="white")
     buffer = io.BytesIO()
     img.save(buffer, format="PNG")
     return buffer.getvalue()
+
+
+def generate_qr(participant_id: str, event_id: str) -> bytes:
+    """Generate a QR code PNG for a job fair registration."""
+    _, png = generate_qr_with_token(participant_id, event_id)
+    return png
 
 
 def validate_scan(token: str, event_id: str) -> tuple[bool, dict[str, Any]]:

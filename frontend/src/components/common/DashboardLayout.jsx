@@ -46,9 +46,15 @@ export default function DashboardLayout({ children, title, description }) {
           <div className="border-b border-border px-5 py-6">
             <GovBrand compact />
           </div>
-          <nav className="flex-1 space-y-1 p-4" aria-label="Main navigation">
+          <nav
+            className="flex-1 space-y-1 overflow-y-auto p-4"
+            aria-label="Main navigation"
+          >
             {links.map((item) => {
-              const active = location.pathname === item.to
+              const active =
+                location.pathname === item.to ||
+                (item.to !== `/${role}/dashboard` &&
+                  location.pathname.startsWith(item.to))
               const Icon = item.icon
               return (
                 <Link
@@ -108,11 +114,28 @@ export default function DashboardLayout({ children, title, description }) {
 
           <main className="flex-1">
             <div className="page-container">
-              <div className="mb-2 lg:hidden">
-                <h1 className="text-xl font-bold">{title}</h1>
-                {description && (
-                  <p className="mt-1 text-sm text-muted-foreground">{description}</p>
-                )}
+              <div className="mb-4 space-y-3 lg:hidden">
+                <label className="sr-only" htmlFor="mobile-nav">
+                  Module navigation
+                </label>
+                <select
+                  id="mobile-nav"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm font-medium"
+                  value={links.find((l) => location.pathname.startsWith(l.to))?.to || links[0]?.to}
+                  onChange={(e) => navigate(e.target.value)}
+                >
+                  {links.map((item) => (
+                    <option key={item.to} value={item.to}>
+                      {item.label}
+                    </option>
+                  ))}
+                </select>
+                <div>
+                  <h1 className="text-xl font-bold">{title}</h1>
+                  {description && (
+                    <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+                  )}
+                </div>
               </div>
               <PageMotion key={location.pathname}>{children}</PageMotion>
             </div>

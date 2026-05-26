@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { Users, Briefcase, ClipboardCheck, CalendarDays, FileText } from 'lucide-react'
 import axiosInstance from '@/api/axiosInstance'
@@ -6,6 +7,8 @@ import PageHeader from '@/components/ui/PageHeader'
 import StatCard from '@/components/ui/StatCard'
 import AnimatedStatGrid from '@/components/ui/AnimatedStatGrid'
 import LoadingPage from '@/components/ui/LoadingPage'
+import Button from '@/components/ui/Button'
+import { STAFF } from '@/config/modulePaths'
 
 function StaffDashboard() {
   const { data, isLoading } = useQuery({
@@ -29,33 +32,42 @@ function StaffDashboard() {
       {isLoading ? (
         <LoadingPage message="Loading dashboard…" />
       ) : (
-        <AnimatedStatGrid>
-          <StatCard
-            label="Registered jobseekers"
-            value={data?.total_jobseekers ?? 0}
-            icon={Users}
-          />
-          <StatCard
-            label="Active vacancies"
-            value={data?.active_vacancies ?? 0}
-            icon={Briefcase}
-          />
-          <StatCard
-            label="Pending approvals"
-            value={data?.pending_approvals ?? 0}
-            icon={ClipboardCheck}
-          />
-          <StatCard
-            label="Upcoming job fairs"
-            value={data?.upcoming_job_fairs ?? 0}
-            icon={CalendarDays}
-          />
-          <StatCard
-            label="Pending program applications"
-            value={data?.pending_programs ?? 0}
-            icon={FileText}
-          />
-        </AnimatedStatGrid>
+        <>
+          <AnimatedStatGrid>
+            <StatCard
+              label="Registered jobseekers"
+              value={data?.total_jobseekers ?? 0}
+              icon={Users}
+            />
+            <StatCard
+              label="Active vacancies"
+              value={data?.active_vacancies ?? 0}
+              icon={Briefcase}
+            />
+            <StatCard
+              label="Pending approvals"
+              value={data?.pending_approvals ?? 0}
+              icon={ClipboardCheck}
+            />
+            <StatCard
+              label="Upcoming job fairs"
+              value={data?.upcoming_job_fairs ?? 0}
+              icon={CalendarDays}
+            />
+            <StatCard
+              label="Pending program applications"
+              value={data?.pending_programs ?? 0}
+              icon={FileText}
+            />
+          </AnimatedStatGrid>
+          {(data?.pending_approvals ?? 0) > 0 && (
+            <div className="mt-6">
+              <Link to={`${STAFF.vacancies}?tab=pending`}>
+                <Button type="button">Review pending vacancies</Button>
+              </Link>
+            </div>
+          )}
+        </>
       )}
     </DashboardLayout>
   )
