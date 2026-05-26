@@ -227,4 +227,9 @@ def verify_password(plain: str, hashed: str) -> bool:
     Returns:
         ``True`` if the password matches, ``False`` otherwise.
     """
-    return bcrypt.checkpw(plain.encode("utf-8"), hashed.encode("utf-8"))
+    if not hashed or not hashed.startswith("$2"):
+        return False
+    try:
+        return bcrypt.checkpw(plain.encode("utf-8"), hashed.encode("utf-8"))
+    except ValueError:
+        return False

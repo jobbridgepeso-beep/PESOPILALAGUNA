@@ -56,7 +56,10 @@ def create_app(config_name: str | None = None) -> Flask:
     # Supabase — only initialise when credentials are present so that
     # unit tests that don't need a real DB can still boot the app.
     supabase_url = app.config.get("SUPABASE_URL", "")
-    supabase_key = app.config.get("SUPABASE_KEY", "")
+    # Server-side routes use the service role key to bypass RLS safely.
+    supabase_key = app.config.get("SUPABASE_SERVICE_KEY") or app.config.get(
+        "SUPABASE_KEY", ""
+    )
     if supabase_url and supabase_key:
         init_supabase(supabase_url, supabase_key)
 
@@ -69,6 +72,12 @@ def create_app(config_name: str | None = None) -> Flask:
     # Register centralised error handlers
     # ------------------------------------------------------------------
     _register_error_handlers(app)
+
+    @app.route("/api/health", methods=["GET"])
+    def health():
+        return jsonify(
+            {"success": True, "data": {"status": "ok"}, "message": "JobBridge API is running."}
+        )
 
     return app
 

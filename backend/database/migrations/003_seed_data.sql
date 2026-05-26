@@ -17,29 +17,7 @@
 -- 002_storage_buckets.sql have been applied.
 -- =============================================================================
 
--- =============================================================================
--- SEED: Admin user
--- =============================================================================
-INSERT INTO users (
-    email,
-    password_hash,
-    role,
-    is_active,
-    is_verified,
-    first_login
-)
-VALUES (
-    'admin@jobbridge.ph',
-    -- bcrypt hash of 'Admin@JobBridge2026', cost factor 12
-    -- Re-generate with: python seed.py (which writes the live hash via supabase-py)
-    -- This placeholder hash is for reference; use seed.py for the authoritative insert.
-    '$2b$12$PLACEHOLDER_REPLACE_WITH_GENERATED_HASH_FROM_SEED_PY_RUN',
-    'admin',
-    true,
-    true,
-    false
-)
-ON CONFLICT (email) DO NOTHING;
+-- Admin user: run `python seed.py` after migrations (writes a real bcrypt hash).
 
 -- =============================================================================
 -- SEED: Default system_settings

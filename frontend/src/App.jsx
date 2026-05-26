@@ -33,8 +33,8 @@ function App() {
           <ProtectedRoute>
             <RoleGuard allowedRoles={['jobseeker']}>
               <Routes>
+                <Route index element={<Navigate to="dashboard" replace />} />
                 <Route path="dashboard" element={<JobseekerDashboard />} />
-                {/* Additional jobseeker routes added in task 20 */}
               </Routes>
             </RoleGuard>
           </ProtectedRoute>
@@ -48,8 +48,8 @@ function App() {
           <ProtectedRoute>
             <RoleGuard allowedRoles={['employer']}>
               <Routes>
+                <Route index element={<Navigate to="dashboard" replace />} />
                 <Route path="dashboard" element={<EmployerDashboard />} />
-                {/* Additional employer routes added in task 21 */}
               </Routes>
             </RoleGuard>
           </ProtectedRoute>
@@ -63,8 +63,8 @@ function App() {
           <ProtectedRoute>
             <RoleGuard allowedRoles={['staff']}>
               <Routes>
+                <Route index element={<Navigate to="dashboard" replace />} />
                 <Route path="dashboard" element={<StaffDashboard />} />
-                {/* Additional staff routes added in task 22 */}
               </Routes>
             </RoleGuard>
           </ProtectedRoute>
@@ -78,8 +78,8 @@ function App() {
           <ProtectedRoute>
             <RoleGuard allowedRoles={['admin']}>
               <Routes>
+                <Route index element={<Navigate to="dashboard" replace />} />
                 <Route path="dashboard" element={<AdminDashboard />} />
-                {/* Additional admin routes added in task 23 */}
               </Routes>
             </RoleGuard>
           </ProtectedRoute>

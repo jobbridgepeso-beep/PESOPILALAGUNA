@@ -56,13 +56,27 @@ def seed_admin() -> None:
         .execute()
     )
 
-    if existing.data:
-        print(f"[SKIP] Admin user '{ADMIN_EMAIL}' already exists — skipping insert.")
-        return
-
-    # Hash password with bcrypt cost factor 12
     password_bytes = ADMIN_PASSWORD.encode("utf-8")
     password_hash = bcrypt.hashpw(password_bytes, bcrypt.gensalt(rounds=12)).decode("utf-8")
+
+    if existing.data:
+        row = existing.data[0]
+        current = (
+            supabase.table("users")
+            .select("password_hash")
+            .eq("id", row["id"])
+            .single()
+            .execute()
+        )
+        stored = (current.data or {}).get("password_hash", "")
+        if stored and stored.startswith("$2b$") and "PLACEHOLDER" not in stored:
+            print(f"[SKIP] Admin user '{ADMIN_EMAIL}' already exists — skipping insert.")
+            return
+        supabase.table("users").update({"password_hash": password_hash}).eq(
+            "id", row["id"]
+        ).execute()
+        print(f"[OK]   Admin password hash updated for '{ADMIN_EMAIL}'.")
+        return
 
     admin_record = {
         "email": ADMIN_EMAIL,

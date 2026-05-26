@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { useAuthStore } from '@/store/authStore'
 
 /**
  * Axios instance pre-configured with the backend base URL.
@@ -6,7 +7,7 @@ import axios from 'axios'
  * handle silent token refresh on 401 responses (Requirement 2.2).
  */
 const axiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000',
+  baseURL: import.meta.env.VITE_API_BASE_URL || '',
   withCredentials: true, // send httpOnly refresh-token cookie automatically
   headers: {
     'Content-Type': 'application/json',
@@ -17,8 +18,6 @@ const axiosInstance = axios.create({
 // Attach the current access token from Zustand auth store before every request.
 axiosInstance.interceptors.request.use(
   (config) => {
-    // Import lazily to avoid circular dependency with the store
-    const { useAuthStore } = require('@/store/authStore')
     const accessToken = useAuthStore.getState().accessToken
     if (accessToken) {
       config.headers.Authorization = `Bearer ${accessToken}`
@@ -71,7 +70,6 @@ axiosInstance.interceptors.response.use(
         const newToken = data?.data?.access_token
 
         if (newToken) {
-          const { useAuthStore } = require('@/store/authStore')
           useAuthStore.getState().setAccessToken(newToken)
           axiosInstance.defaults.headers.common.Authorization = `Bearer ${newToken}`
           processQueue(null, newToken)
@@ -81,7 +79,6 @@ axiosInstance.interceptors.response.use(
       } catch (refreshError) {
         processQueue(refreshError, null)
         // Refresh failed — clear auth state and redirect to login
-        const { useAuthStore } = require('@/store/authStore')
         useAuthStore.getState().clearAuth()
         window.location.href = '/login'
         return Promise.reject(refreshError)
@@ -92,7 +89,6 @@ axiosInstance.interceptors.response.use(
 
     if (error.response?.status === 403) {
       // Redirect to the user's own role dashboard
-      const { useAuthStore } = require('@/store/authStore')
       const role = useAuthStore.getState().role
       if (role) {
         window.location.href = `/${role}/dashboard`

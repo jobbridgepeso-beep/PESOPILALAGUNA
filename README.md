@@ -26,6 +26,11 @@ python database/create_buckets.py
 python seed.py
 ```
 
+**Default admin login** (after `seed.py`):
+
+- Email: `admin@jobbridge.ph`
+- Password: `Admin@JobBridge2026` (change after first login)
+
 ### 2. Backend
 
 ```bash
@@ -46,6 +51,12 @@ npm run dev
 ```
 
 App runs at `http://localhost:5173`.
+
+Or start both with:
+
+```powershell
+.\scripts\start-dev.ps1
+```
 
 ## Repository
 
