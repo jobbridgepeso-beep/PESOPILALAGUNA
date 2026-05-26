@@ -1,0 +1,57 @@
+# ============================================================
+# Render Blueprint — JobBridge Backend
+# Docs: https://render.com/docs/blueprint-spec
+#
+# Quick deploy:
+#   1. Push this file to GitHub (already done).
+#   2. Go to https://dashboard.render.com/blueprints
+#   3. Click "New Blueprint Instance" -> connect this repo.
+#   4. Render auto-detects this file and provisions the service.
+#   5. Add the SECRET env vars from the dashboard (see envVars below).
+# ============================================================
+
+services:
+  - type: web
+    name: jobbridge-backend
+    runtime: python
+    plan: free
+    region: singapore
+    rootDir: backend
+    buildCommand: |
+      pip install --upgrade pip
+      pip install -r requirements.txt
+    startCommand: gunicorn wsgi:app --worker-class eventlet -w 1 --bind 0.0.0.0:$PORT --timeout 120
+    healthCheckPath: /api/health
+    autoDeploy: true
+
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: DISABLE_REDIS
+        value: "1"
+      - key: PORT
+        value: "10000"
+
+      # ── Secrets — set these in the Render dashboard ──
+      - key: SECRET_KEY
+        sync: false
+      - key: JWT_SECRET_KEY
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: MAIL_USERNAME
+        sync: false
+      - key: MAIL_PASSWORD
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false        # e.g. https://your-app.vercel.app
+      - key: DIALOGFLOW_PROJECT_ID
+        sync: false

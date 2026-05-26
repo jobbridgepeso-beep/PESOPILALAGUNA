@@ -27,10 +27,16 @@ class BaseConfig:
     JWT_COOKIE_SAMESITE: str = "Lax"
     JWT_COOKIE_CSRF_PROTECT: bool = False  # CSRF handled separately
 
-    # CORS
-    CORS_ORIGINS: list = os.environ.get(
-        "CORS_ORIGINS", "http://localhost:5173"
-    ).split(",")
+    # CORS — comma-separated list of allowed frontend origins. Trims
+    # whitespace and drops empty entries so trailing commas in the env
+    # var don't break the credentials check on the browser side.
+    CORS_ORIGINS: list = [
+        origin.strip()
+        for origin in os.environ.get(
+            "CORS_ORIGINS", "http://localhost:5173"
+        ).split(",")
+        if origin.strip()
+    ]
 
     # Flask-Mail (Gmail SMTP)
     MAIL_SERVER: str = "smtp.gmail.com"
@@ -95,9 +101,15 @@ class TestingConfig(BaseConfig):
 
 
 class ProductionConfig(BaseConfig):
-    """Production environment — strict security settings."""
+    """Production environment — strict security settings.
+
+    Uses ``SameSite=None`` so the refresh-token cookie survives the
+    cross-origin hop between the Vercel frontend and the Render backend.
+    ``Secure`` is required by browsers whenever ``SameSite=None``.
+    """
 
     JWT_COOKIE_SECURE: bool = True
+    JWT_COOKIE_SAMESITE: str = "None"
     JWT_COOKIE_CSRF_PROTECT: bool = True
 
 
