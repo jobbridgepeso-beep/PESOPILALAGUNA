@@ -9,6 +9,7 @@ from app.blueprints.staff import staff_bp
 from app.extensions import get_supabase
 from app.services.audit_service import log as audit_log
 from app.services.notification_service import send_inapp
+from app.utils.db_helpers import safe_single
 from app.utils.decorators import role_required
 from app.utils.responses import api_err, api_ok
 
@@ -56,30 +57,28 @@ def approve_vacancy(vacancy_id: str):
     supabase = get_supabase()
     now = datetime.now(timezone.utc).isoformat()
 
-    vac = (
+    vacancy = safe_single(
         supabase.table("job_vacancies")
         .select("*, employer_profiles(user_id, company_name)")
         .eq("id", vacancy_id)
-        .single()
-        .execute()
     )
-    if not vac.data:
+    if not vacancy:
         return api_err("Vacancy not found.", 404)
-    if vac.data.get("status") != "pending":
+    if vacancy.get("status") != "pending":
         return api_err("Vacancy is not pending approval.", 409)
 
     supabase.table("job_vacancies").update(
         {"status": "active", "approved_by": staff_id, "approved_at": now}
     ).eq("id", vacancy_id).execute()
 
-    employer = vac.data.get("employer_profiles") or {}
+    employer = vacancy.get("employer_profiles") or {}
     if employer.get("user_id"):
         send_inapp(
             employer["user_id"],
             "notification",
             {
                 "title": "Vacancy approved",
-                "body": f'"{vac.data.get("title")}" is now live on JobBridge.',
+                "body": f'"{vacancy.get("title")}" is now live on JobBridge.',
             },
         )
 
@@ -104,28 +103,26 @@ def reject_vacancy(vacancy_id: str):
     if not reason:
         return api_err("Rejection reason is required.", 422)
 
-    vac = (
+    vacancy = safe_single(
         supabase.table("job_vacancies")
         .select("*, employer_profiles(user_id)")
         .eq("id", vacancy_id)
-        .single()
-        .execute()
     )
-    if not vac.data:
+    if not vacancy:
         return api_err("Vacancy not found.", 404)
 
     supabase.table("job_vacancies").update(
         {"status": "rejected", "rejection_reason": reason}
     ).eq("id", vacancy_id).execute()
 
-    employer = vac.data.get("employer_profiles") or {}
+    employer = vacancy.get("employer_profiles") or {}
     if employer.get("user_id"):
         send_inapp(
             employer["user_id"],
             "notification",
             {
                 "title": "Vacancy not approved",
-                "body": f'"{vac.data.get("title")}" was rejected: {reason}',
+                "body": f'"{vacancy.get("title")}" was rejected: {reason}',
             },
         )
 

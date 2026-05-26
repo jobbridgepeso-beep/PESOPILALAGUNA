@@ -29,7 +29,11 @@ from flask_jwt_extended import (
     jwt_required,
     set_refresh_cookies,
     unset_jwt_cookies,
+    verify_jwt_in_request,
 )
+from postgrest.exceptions import APIError
+
+from app.utils.db_helpers import get_user_by_email
 
 from app.blueprints.auth import auth_bp
 from app.extensions import get_supabase
@@ -241,19 +245,11 @@ def verify_otp():
     if not email or not token:
         return _err("email and otp are required.", 422)
 
-    supabase = get_supabase()
-
-    user_resp = (
-        supabase.table("users")
-        .select("id, role, is_verified")
-        .eq("email", email)
-        .single()
-        .execute()
-    )
-    if not user_resp.data:
+    user = get_user_by_email(email, "id, role, is_verified")
+    if not user:
         return _err("No account found with this email.", 404)
 
-    user = user_resp.data
+    supabase = get_supabase()
     user_id: str = user["id"]
 
     if user["is_verified"]:
@@ -304,20 +300,12 @@ def resend_otp():
     if purpose not in ("registration", "password_reset"):
         return _err("purpose must be 'registration' or 'password_reset'.", 422)
 
-    supabase = get_supabase()
-
-    user_resp = (
-        supabase.table("users")
-        .select("id, role")
-        .eq("email", email)
-        .single()
-        .execute()
-    )
-    if not user_resp.data:
+    user = get_user_by_email(email, "id, role")
+    if not user:
         # Return success to avoid email enumeration
         return _ok(message="If an account exists, a new code has been sent.")
 
-    user = user_resp.data
+    supabase = get_supabase()
     user_id: str = user["id"]
 
     # Invalidate all existing unused OTPs for this user + purpose
@@ -362,21 +350,18 @@ def login():
     if not email or not password:
         return _err("email and password are required.", 422)
 
-    supabase = get_supabase()
+    try:
+        user = get_user_by_email(
+            email,
+            "id, email, password_hash, role, is_active, is_verified, first_login",
+        )
+    except APIError as exc:
+        logger.error("Login user lookup failed: %s", exc)
+        return _err("Unable to sign in right now. Please try again.", 500)
 
-    user_resp = (
-        supabase.table("users")
-        .select("id, email, password_hash, role, is_active, is_verified, first_login")
-        .eq("email", email)
-        .single()
-        .execute()
-    )
-
-    if not user_resp.data:
+    if not user:
         _record_login_failure(ip)
         return _err("Invalid email or password.", 401)
-
-    user = user_resp.data
 
     if not verify_password(password, user["password_hash"]):
         _record_login_failure(ip)
@@ -472,32 +457,39 @@ def refresh():
 # ---------------------------------------------------------------------------
 
 @auth_bp.route("/logout", methods=["POST"])
-@jwt_required(refresh=True)
 def logout():
-    """Invalidate refresh token and clear the cookie.
+    """Invalidate refresh token (if present) and clear auth cookies.
+
+    Does not require a valid refresh JWT — clears cookies even when only
+    the access token was sent (fixes 422 on sign-out from the UI).
 
     Requirements: 2.5
     """
-    claims = get_jwt()
-    jti: str = claims.get("jti", "")
-    identity = get_jwt_identity()
-    role = claims.get("role", "unknown")
-
-    _blacklist_refresh_token(jti)
-
-    audit_log(
-        actor_id=identity,
-        actor_role=role,
-        action_type="logout",
-        resource_type="user",
-        resource_id=identity,
-        ip_address=_get_ip(),
-    )
-
     response = make_response(
         jsonify({"success": True, "data": None, "message": "Logged out successfully."})
     )
     unset_jwt_cookies(response)
+
+    try:
+        verify_jwt_in_request(refresh=True, locations=["cookies"])
+        claims = get_jwt()
+        jti: str = claims.get("jti", "")
+        identity = get_jwt_identity()
+        role = claims.get("role", "unknown")
+        if jti:
+            _blacklist_refresh_token(jti)
+        if identity:
+            audit_log(
+                actor_id=identity,
+                actor_role=role,
+                action_type="logout",
+                resource_type="user",
+                resource_id=identity,
+                ip_address=_get_ip(),
+            )
+    except Exception:
+        pass
+
     return response
 
 
@@ -517,23 +509,15 @@ def forgot_password():
     if not email:
         return _err("email is required.", 422)
 
-    supabase = get_supabase()
-
-    user_resp = (
-        supabase.table("users")
-        .select("id, role")
-        .eq("email", email)
-        .single()
-        .execute()
-    )
+    user = get_user_by_email(email, "id, role")
 
     # Always return success to prevent email enumeration
-    if not user_resp.data:
+    if not user:
         return _ok(
             message="If an account with that email exists, a reset code has been sent."
         )
 
-    user = user_resp.data
+    supabase = get_supabase()
     user_id: str = user["id"]
 
     # Invalidate existing password_reset OTPs
@@ -575,19 +559,11 @@ def reset_password():
     if len(new_password) < 8:
         return _err("Password must be at least 8 characters.", 422)
 
-    supabase = get_supabase()
-
-    user_resp = (
-        supabase.table("users")
-        .select("id, role")
-        .eq("email", email)
-        .single()
-        .execute()
-    )
-    if not user_resp.data:
+    user = get_user_by_email(email, "id, role")
+    if not user:
         return _err("No account found with this email.", 404)
 
-    user = user_resp.data
+    supabase = get_supabase()
     user_id: str = user["id"]
 
     valid, error_msg = validate_otp(user_id, token, "password_reset", supabase)

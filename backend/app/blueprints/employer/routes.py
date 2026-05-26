@@ -8,19 +8,15 @@ from app.extensions import get_supabase
 from app.services.ai_matcher import rank_applicants
 from app.services.audit_service import log as audit_log
 from app.services.notification_service import send_inapp
+from app.utils.db_helpers import safe_single
 from app.utils.decorators import role_required
 from app.utils.responses import api_err, api_ok
 
 
 def _get_employer(supabase, user_id: str):
-    resp = (
-        supabase.table("employer_profiles")
-        .select("*")
-        .eq("user_id", user_id)
-        .single()
-        .execute()
+    return safe_single(
+        supabase.table("employer_profiles").select("*").eq("user_id", user_id)
     )
-    return resp.data
 
 
 @employer_bp.route("/dashboard", methods=["GET"])
@@ -160,14 +156,12 @@ def manage_vacancy(vacancy_id: str):
     if not profile:
         return api_err("Employer profile not found.", 404)
 
-    vac = (
+    vac_row = safe_single(
         supabase.table("job_vacancies")
         .select("id, employer_id, status")
         .eq("id", vacancy_id)
-        .single()
-        .execute()
     )
-    if not vac.data or vac.data["employer_id"] != profile["id"]:
+    if not vac_row or vac_row["employer_id"] != profile["id"]:
         return api_err("Vacancy not found.", 404)
 
     if request.method == "DELETE":
@@ -191,7 +185,7 @@ def manage_vacancy(vacancy_id: str):
     if not updates:
         return api_err("No valid fields to update.", 422)
 
-    if vac.data["status"] == "active":
+    if vac_row["status"] == "active":
         updates["status"] = "pending"
 
     resp = (
@@ -212,15 +206,13 @@ def list_applicants(vacancy_id: str):
     if not profile:
         return api_err("Employer profile not found.", 404)
 
-    vac = (
+    vacancy = safe_single(
         supabase.table("job_vacancies")
         .select("*")
         .eq("id", vacancy_id)
         .eq("employer_id", profile["id"])
-        .single()
-        .execute()
     )
-    if not vac.data:
+    if not vacancy:
         return api_err("Vacancy not found.", 404)
 
     apps = (
@@ -234,7 +226,7 @@ def list_applicants(vacancy_id: str):
         profile_data = row.pop("jobseeker_profiles", None) or {}
         applicants.append({**row, "profile": profile_data})
 
-    ranked = rank_applicants(vac.data, applicants)
+    ranked = rank_applicants(vacancy, applicants)
     return api_ok(ranked)
 
 
@@ -253,17 +245,15 @@ def update_application_status(application_id: str):
     if new_status not in allowed:
         return api_err(f"status must be one of: {', '.join(sorted(allowed))}", 422)
 
-    app = (
+    application = safe_single(
         supabase.table("job_applications")
         .select("*, job_vacancies(employer_id, title, employment_type)")
         .eq("id", application_id)
-        .single()
-        .execute()
     )
-    if not app.data:
+    if not application:
         return api_err("Application not found.", 404)
 
-    vacancy = app.data.get("job_vacancies") or {}
+    vacancy = application.get("job_vacancies") or {}
     if vacancy.get("employer_id") != profile["id"]:
         return api_err("Access denied.", 403)
 
@@ -274,25 +264,23 @@ def update_application_status(application_id: str):
     if new_status == "hired":
         supabase.table("employment_records").insert(
             {
-                "jobseeker_id": app.data["jobseeker_id"],
+                "jobseeker_id": application["jobseeker_id"],
                 "employer_id": profile["id"],
-                "vacancy_id": app.data["vacancy_id"],
+                "vacancy_id": application["vacancy_id"],
                 "application_id": application_id,
                 "employment_type": vacancy.get("employment_type", "full-time"),
                 "status": "active",
             }
         ).execute()
 
-    seeker = (
+    seeker = safe_single(
         supabase.table("jobseeker_profiles")
         .select("user_id")
-        .eq("id", app.data["jobseeker_id"])
-        .single()
-        .execute()
+        .eq("id", application["jobseeker_id"])
     )
-    if seeker.data:
+    if seeker:
         send_inapp(
-            seeker.data["user_id"],
+            seeker["user_id"],
             "application_update",
             {
                 "title": "Application status updated",

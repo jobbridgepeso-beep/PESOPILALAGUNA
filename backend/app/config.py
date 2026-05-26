@@ -39,6 +39,7 @@ class BaseConfig:
     MAIL_USERNAME: str = os.environ.get("MAIL_USERNAME", "")
     MAIL_PASSWORD: str = os.environ.get("MAIL_PASSWORD", "")
     MAIL_DEFAULT_SENDER: str = os.environ.get("MAIL_USERNAME", "noreply@jobbridge.ph")
+    MAIL_DEBUG: bool = False  # never leak SMTP credentials to logs
 
     # Supabase
     SUPABASE_URL: str = os.environ.get("SUPABASE_URL", "")

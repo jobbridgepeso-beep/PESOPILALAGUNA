@@ -8,19 +8,15 @@ from app.extensions import get_supabase
 from app.services.ai_matcher import compute_match_score, rank_vacancies
 from app.services.audit_service import log as audit_log
 from app.services.notification_service import send_inapp
+from app.utils.db_helpers import safe_single
 from app.utils.decorators import role_required
 from app.utils.responses import api_err, api_ok
 
 
 def _get_jobseeker(supabase, user_id: str):
-    resp = (
-        supabase.table("jobseeker_profiles")
-        .select("*")
-        .eq("user_id", user_id)
-        .single()
-        .execute()
+    return safe_single(
+        supabase.table("jobseeker_profiles").select("*").eq("user_id", user_id)
     )
-    return resp.data
 
 
 @jobseeker_bp.route("/dashboard", methods=["GET"])
@@ -133,15 +129,13 @@ def apply_to_job(vacancy_id: str):
         return api_err("Profile not found.", 404)
 
     jobseeker_id = profile["id"]
-    vac = (
+    vacancy = safe_single(
         supabase.table("job_vacancies")
         .select("*")
         .eq("id", vacancy_id)
         .eq("status", "active")
-        .single()
-        .execute()
     )
-    if not vac.data:
+    if not vacancy:
         return api_err("Vacancy not found or not active.", 404)
 
     existing = (
@@ -155,7 +149,7 @@ def apply_to_job(vacancy_id: str):
         return api_err("You have already applied for this vacancy.", 409)
 
     body = request.get_json(silent=True) or {}
-    score = compute_match_score(profile, vac.data)
+    score = compute_match_score(profile, vacancy)
     payload = {
         "vacancy_id": vacancy_id,
         "jobseeker_id": jobseeker_id,
@@ -168,20 +162,18 @@ def apply_to_job(vacancy_id: str):
         return api_err("Failed to submit application.", 500)
 
     application = app_resp.data[0]
-    employer = (
+    employer = safe_single(
         supabase.table("employer_profiles")
         .select("user_id")
-        .eq("id", vac.data["employer_id"])
-        .single()
-        .execute()
+        .eq("id", vacancy["employer_id"])
     )
-    if employer.data:
+    if employer:
         send_inapp(
-            employer.data["user_id"],
+            employer["user_id"],
             "notification",
             {
                 "title": "New job application",
-                "body": f"A jobseeker applied for {vac.data.get('title', 'your vacancy')}.",
+                "body": f"A jobseeker applied for {vacancy.get('title', 'your vacancy')}.",
                 "application_id": application["id"],
             },
         )
