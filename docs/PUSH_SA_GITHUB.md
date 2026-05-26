@@ -27,12 +27,27 @@ Palitan ang email ng email na naka-link sa GitHub account **`jobbridgepeso-beep`
 
 ## Hakbang 2: Gumawa ng Personal Access Token
 
+### Option A — Classic token (recommended, mas simple)
+
 1. Mag-login sa GitHub bilang **jobbridgepeso-beep**
 2. Pumunta sa: https://github.com/settings/tokens
 3. **Generate new token (classic)**
 4. Lagyan ng pangalan, hal. `PESOPILA-push`
-5. Piliin ang scope: **`repo`** (full control)
+5. Piliin ang scope: **`repo`** (full control) — kailangan ito para makapag-**push**
 6. I-generate at **kopyahin** ang token (makikita mo lang ito isang beses)
+
+### Option B — Fine-grained token
+
+Kung **Fine-grained** ang ginamit mo at 403 / "Permission denied" ang lumalabas:
+
+1. https://github.com/settings/tokens?type=beta → **Generate new token**
+2. **Repository access:** Only select repositories → piliin **`PESOPILALAGUNA`**
+3. **Permissions → Repository permissions:**
+   - **Contents:** Read and write
+   - **Metadata:** Read-only (auto)
+4. I-save at gamitin ang bagong token
+
+> Ang token na walang **Contents: Write** ay hindi makakapag-push kahit tama ang account.
 
 ---
 
