@@ -46,7 +46,13 @@ class BaseConfig:
     SUPABASE_KEY: str = os.environ.get("SUPABASE_KEY", "")
     SUPABASE_SERVICE_KEY: str = os.environ.get("SUPABASE_SERVICE_KEY", "")
 
-    # Redis
+    # Redis — set DISABLE_REDIS=1 to run without it (rate limiting and
+    # the SocketIO message queue become no-ops). Useful for local dev.
+    DISABLE_REDIS: bool = os.environ.get("DISABLE_REDIS", "0").lower() in (
+        "1",
+        "true",
+        "yes",
+    )
     REDIS_URL: str = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
 
     # Celery
@@ -63,9 +69,11 @@ class BaseConfig:
     # File upload limits
     MAX_CONTENT_LENGTH: int = 5 * 1024 * 1024  # 5 MB
 
-    # Flask-SocketIO
-    SOCKETIO_MESSAGE_QUEUE: str = os.environ.get(
-        "REDIS_URL", "redis://localhost:6379/0"
+    # Flask-SocketIO — ``None`` falls back to local in-memory queue.
+    SOCKETIO_MESSAGE_QUEUE: str | None = (
+        None
+        if os.environ.get("DISABLE_REDIS", "0").lower() in ("1", "true", "yes")
+        else os.environ.get("REDIS_URL", "redis://localhost:6379/0")
     )
 
 

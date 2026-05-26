@@ -49,20 +49,78 @@ from app.utils.helpers import (
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
-# Rate-limit helpers (Redis-backed)
+# Rate-limit helpers (Redis-backed, with graceful degradation)
+# ---------------------------------------------------------------------------
+#
+# A circuit breaker keeps the app quiet when Redis isn't running locally:
+# the first failure logs a single INFO line, subsequent calls short-circuit
+# for ``_REDIS_RETRY_AFTER`` seconds before we try again. Rate-limiting and
+# token blacklisting both fail open — they are hardening features, not
+# correctness requirements, so the app keeps serving requests.
 # ---------------------------------------------------------------------------
 
+import time
+
+_REDIS_RETRY_AFTER = 60.0  # seconds between connection attempts when down
+_redis_client = None  # cached client across requests
+_redis_disabled_until: float = 0.0  # epoch seconds; 0 means "try now"
+_redis_warned = False  # log the "unavailable" warning only once
+
+
 def _get_redis():
-    """Return a Redis client from the app config."""
-    import redis as redis_lib
+    """Return a cached Redis client, or ``None`` when unreachable.
+
+    Suppresses repeated connection errors by caching a "disabled until"
+    timestamp; callers should treat ``None`` as "Redis is unavailable" and
+    fall back to fail-open behaviour. Honours the ``DISABLE_REDIS`` flag
+    in app config to skip the connection attempt entirely.
+    """
+    global _redis_client, _redis_disabled_until, _redis_warned
+
     from flask import current_app
-    return redis_lib.from_url(current_app.config["REDIS_URL"], decode_responses=True)
+
+    if current_app.config.get("DISABLE_REDIS"):
+        return None
+
+    if _redis_disabled_until and time.monotonic() < _redis_disabled_until:
+        return None
+
+    if _redis_client is not None:
+        return _redis_client
+
+    try:
+        import redis as redis_lib
+
+        client = redis_lib.from_url(
+            current_app.config["REDIS_URL"],
+            decode_responses=True,
+            socket_connect_timeout=0.5,
+            socket_timeout=0.5,
+        )
+        client.ping()
+    except Exception as exc:
+        _redis_disabled_until = time.monotonic() + _REDIS_RETRY_AFTER
+        if not _redis_warned:
+            logger.info(
+                "Redis unavailable (%s) — rate limiting and token "
+                "blacklisting will be skipped for %ss.",
+                exc.__class__.__name__,
+                int(_REDIS_RETRY_AFTER),
+            )
+            _redis_warned = True
+        return None
+
+    _redis_client = client
+    _redis_disabled_until = 0.0
+    return client
 
 
 def _check_rate_limit(key: str, limit: int, window_seconds: int) -> bool:
     """Return True if the action is allowed, False if rate-limited."""
+    r = _get_redis()
+    if r is None:
+        return True  # fail open
     try:
-        r = _get_redis()
         current = r.get(key)
         if current and int(current) >= limit:
             return False
@@ -71,53 +129,61 @@ def _check_rate_limit(key: str, limit: int, window_seconds: int) -> bool:
         pipe.expire(key, window_seconds)
         pipe.execute()
         return True
-    except Exception as exc:
-        logger.warning("Rate-limit check failed (allowing request): %s", exc)
-        return True  # Fail open — don't block users if Redis is down
+    except Exception:
+        return True
 
 
 def _is_ip_locked(ip: str) -> bool:
     """Return True if the IP has exceeded the login failure threshold."""
+    r = _get_redis()
+    if r is None:
+        return False
     try:
-        r = _get_redis()
-        key = f"login_fail:{ip}"
-        count = r.get(key)
+        count = r.get(f"login_fail:{ip}")
         return count is not None and int(count) >= 5
     except Exception:
         return False
 
 
 def _record_login_failure(ip: str) -> None:
+    r = _get_redis()
+    if r is None:
+        return
     try:
-        r = _get_redis()
         key = f"login_fail:{ip}"
         pipe = r.pipeline()
         pipe.incr(key)
         pipe.expire(key, 900)  # 15-minute window
         pipe.execute()
-    except Exception as exc:
-        logger.warning("Failed to record login failure: %s", exc)
+    except Exception:
+        pass
 
 
 def _clear_login_failures(ip: str) -> None:
+    r = _get_redis()
+    if r is None:
+        return
     try:
-        r = _get_redis()
         r.delete(f"login_fail:{ip}")
     except Exception:
         pass
 
 
 def _blacklist_refresh_token(jti: str) -> None:
+    r = _get_redis()
+    if r is None:
+        return
     try:
-        r = _get_redis()
         r.setex(f"blacklist:{jti}", 60 * 60 * 24 * 30, "1")  # 30 days
-    except Exception as exc:
-        logger.warning("Failed to blacklist refresh token: %s", exc)
+    except Exception:
+        pass
 
 
 def _is_token_blacklisted(jti: str) -> bool:
+    r = _get_redis()
+    if r is None:
+        return False
     try:
-        r = _get_redis()
         return r.exists(f"blacklist:{jti}") == 1
     except Exception:
         return False

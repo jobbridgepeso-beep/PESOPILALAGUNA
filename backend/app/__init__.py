@@ -46,12 +46,14 @@ def create_app(config_name: str | None = None) -> Flask:
     )
     jwt.init_app(app)
     mail.init_app(app)
-    socketio.init_app(
-        app,
-        cors_allowed_origins=app.config["CORS_ORIGINS"],
-        message_queue=app.config.get("SOCKETIO_MESSAGE_QUEUE"),
-        async_mode="eventlet",
-    )
+    socketio_kwargs = {
+        "cors_allowed_origins": app.config["CORS_ORIGINS"],
+        "async_mode": "eventlet",
+    }
+    queue = app.config.get("SOCKETIO_MESSAGE_QUEUE")
+    if queue:
+        socketio_kwargs["message_queue"] = queue
+    socketio.init_app(app, **socketio_kwargs)
 
     # Supabase — only initialise when credentials are present so that
     # unit tests that don't need a real DB can still boot the app.
